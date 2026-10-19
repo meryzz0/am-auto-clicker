@@ -1,0 +1,45 @@
+name: Bug report
+description: Report a reproducible problem with AM Auto Clicker
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Please remove personal data from logs before sharing them. Do not include passwords or access tokens."
+  - type: input
+    id: distribution
+    attributes:
+      label: Distribution and version
+      placeholder: Ubuntu 24.04 / Zorin OS version
+    validations:
+      required: true
+  - type: dropdown
+    id: session
+    attributes:
+      label: Desktop session
+      options:
+        - GNOME on Wayland
+        - GNOME on X11
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: AM Auto Clicker version
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include what you expected and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs (redacted)
+      render: text
+    validations:
+      required: false

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AM Auto Clicker
+GenericName=Mouse Autoclicker
+Comment=Simple mouse automation for the Linux desktop
+Exec=am-auto-clicker --show
+Icon=com.am.autoclicker
+Terminal=false
+Categories=Utility;
+StartupNotify=true
+DBusActivatable=false
+Keywords=mouse;click;autoclicker;automation;

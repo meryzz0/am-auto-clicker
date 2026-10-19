@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Tests and package checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-gi \
+            gir1.2-gtk-4.0 \
+            gir1.2-adw-1 \
+            python3-evdev \
+            desktop-file-utils \
+            libxml2-utils \
+            xvfb \
+            xauth \
+            dbus-daemon
+
+      - name: Run project checks
+        run: ./scripts/check.sh
+
+      - name: Build Python distribution
+        run: python3 -m pip wheel --no-deps --wheel-dir "$RUNNER_TEMP/am-auto-clicker-wheel" .
+
+      - name: Validate desktop entry and icon
+        run: |
+          desktop-file-validate data/com.am.autoclicker.desktop
+          xmllint --noout data/com.am.autoclicker.svg
+
+      - name: Smoke-test application entry point
+        run: PYTHONPATH=src /usr/bin/python3 -m am_auto_clicker --version
+
+      - name: Smoke-test GTK window under a virtual display
+        shell: bash
+        run: |
+          set +e
+          timeout --signal=INT --kill-after=3s 8s \
+            dbus-run-session -- xvfb-run -a env \
+              GDK_BACKEND=x11 \
+              GSETTINGS_BACKEND=memory \
+              PYTHONPATH=src \
+              /usr/bin/python3 -m am_auto_clicker --show
+          status=$?
+          set -e
+          if [[ "$status" -ne 124 && "$status" -ne 130 ]]; then
+            echo "GUI smoke test exited unexpectedly with status $status."
+            exit "$status"
+          fi
+          echo "GTK application remained running until the smoke-test timeout."

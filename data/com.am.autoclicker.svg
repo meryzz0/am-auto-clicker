@@ -1,0 +1,10 @@
+<!-- SPDX-FileCopyrightText: 2026 meryzz0 -->
+<!-- SPDX-License-Identifier: MIT -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="3" y="3" width="122" height="122" rx="31" fill="#182438"/>
+  <path d="M64 21c-17 0-28 12-28 29v28c0 17 11 29 28 29s28-12 28-29V50C92 33 81 21 64 21Z" fill="#eaf1fc"/>
+  <path d="M64 22v29" fill="none" stroke="#4778bc" stroke-width="7" stroke-linecap="round"/>
+  <path d="M24 48h12M18 65h14M25 82h13" fill="none" stroke="#84b7ff" stroke-width="5" stroke-linecap="round"/>
+  <path d="M98 47h8M101 64h10M97 81h9" fill="none" stroke="#84b7ff" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="64" cy="64" r="4" fill="#4778bc"/>
+</svg>
