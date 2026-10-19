@@ -1,0 +1,85 @@
+name: Release source archives
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: Existing GitHub Release tag to package
+        required: true
+        default: v0.1.0
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  source-archives:
+    name: Build and attach source archives
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      TAG_NAME: ${{ inputs.tag_name || github.event.release.tag_name }}
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag_name || github.event.release.tag_name }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+
+          if [[ ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Refusing unexpected release tag: $TAG_NAME" >&2
+            exit 1
+          fi
+
+          git check-ref-format "refs/tags/$TAG_NAME"
+          tagged_commit="$(git rev-parse "${TAG_NAME}^{commit}")"
+          checked_out_commit="$(git rev-parse HEAD)"
+          if [[ "$tagged_commit" != "$checked_out_commit" ]]; then
+            echo "The checked-out commit does not match $TAG_NAME." >&2
+            exit 1
+          fi
+
+          release_tag="$(gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)"
+          if [[ "$release_tag" != "$TAG_NAME" ]]; then
+            echo "No matching GitHub Release exists for $TAG_NAME." >&2
+            exit 1
+          fi
+
+      - name: Create source archives and checksums
+        run: |
+          set -Eeuo pipefail
+          mkdir -p dist
+          prefix="am-auto-clicker-${TAG_NAME}/"
+          tarball="dist/am-auto-clicker-${TAG_NAME}.tar.gz"
+          zipfile="dist/am-auto-clicker-${TAG_NAME}.zip"
+          checksums="dist/SHA256SUMS-${TAG_NAME}.txt"
+
+          git archive --format=tar "$TAG_NAME" | gzip -n > "$tarball"
+          git archive --format=zip --prefix="$prefix" "$TAG_NAME" > "$zipfile"
+
+          tar -tzf "$tarball" >/dev/null
+          unzip -t "$zipfile" >/dev/null
+          (cd dist && sha256sum "$(basename "$tarball")" "$(basename "$zipfile")" > "$(basename "$checksums")")
+          (cd dist && sha256sum --check "$(basename "$checksums")")
+
+      - name: Attach archives to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          gh release upload "$TAG_NAME" \
+            "dist/am-auto-clicker-${TAG_NAME}.tar.gz" \
+            "dist/am-auto-clicker-${TAG_NAME}.zip" \
+            "dist/SHA256SUMS-${TAG_NAME}.txt" \
+            --clobber \
+            --repo "$GITHUB_REPOSITORY"
